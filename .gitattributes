@@ -1,0 +1,7 @@
+# Normalize line endings to LF in the repo (Vercel builds on Linux).
+* text=auto eol=lf
+
+# Binary/asset types Git should not touch.
+*.png binary
+*.jpg binary
+*.ico binary
