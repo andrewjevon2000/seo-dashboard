@@ -13,7 +13,11 @@ const bool = (v: string | undefined, dflt = false) =>
   v == null ? dflt : ["1", "true", "yes", "on"].includes(v.toLowerCase());
 
 const schema = z.object({
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+  // Optional at parse time so importing this module never throws during
+  // `next build` (page-data collection imports route modules but connects to no
+  // DB). Presence is enforced lazily where it's actually needed — see
+  // lib/db/client.ts, which throws a clear error on first query if it's missing.
+  DATABASE_URL: z.string().optional(),
   DIRECT_URL: z.string().optional(),
 
   AHREFS_API_KEY: z.string().optional(),
