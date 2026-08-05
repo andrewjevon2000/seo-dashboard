@@ -101,7 +101,8 @@ export async function pullGscPages(
     date: dateTo,
     clicks: p.clicks ?? 0,
     impressions: p.impressions ?? 0,
-    ctr: p.ctr ?? 0,
+    // Ahrefs returns ctr as a PERCENT (e.g. 0.91 = 0.91%); we store fractions (0–1).
+    ctr: (p.ctr ?? 0) / 100,
     position: p.position ?? 0,
   }));
 }
@@ -139,7 +140,8 @@ export async function pullGscPageHistory(
     date: m.date.slice(0, 10),
     clicks: m.clicks ?? 0,
     impressions: m.impressions ?? 0,
-    ctr: m.ctr ?? 0,
+    // Percent → fraction, as in pullGscPages.
+    ctr: (m.ctr ?? 0) / 100,
     position: m.position ?? 0,
   }));
 }
