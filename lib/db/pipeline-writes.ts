@@ -35,6 +35,7 @@ export async function upsertArticles(
     batch: r.batch,
     contentType: r.contentType,
     topicCluster: r.topicCluster,
+    publishDate: r.publishDate,
   }));
 
   // Deduplicate on normalized URL within this batch (sheet may list dupes).
@@ -51,6 +52,8 @@ export async function upsertArticles(
         keyword: sql`excluded.keyword`,
         batch: sql`excluded.batch`,
         contentType: sql`excluded.content_type`,
+        // Keep an existing publish_date if the sheet cell is blank.
+        publishDate: sql`coalesce(excluded.publish_date, ${articles.publishDate})`,
         // Only overwrite topic_cluster when the sheet actually provides the column;
         // otherwise keep whatever is already stored (COALESCE keeps existing).
         topicCluster: clusterColumnPresent

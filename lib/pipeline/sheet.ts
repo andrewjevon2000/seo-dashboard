@@ -19,7 +19,12 @@ import { fixturePlanRows } from "./fixtures";
  *   Content Structure | Rank   (+ a future "Cluster" column, see §4.1)
  */
 
-// Column header → PlanRow field. Matched case-insensitively, trimmed.
+// Normalize a header/alias so separators don't matter: "content_type",
+// "Content Type", and "content-type" all collapse to the same token.
+const norm = (s: string) => s.trim().toLowerCase().replace(/[\s_-]+/g, " ");
+
+// Column header → PlanRow field. Aliases are compared after norm(), so list them
+// in the plain spaced form; underscore/hyphen variants match automatically.
 const HEADER_ALIASES: Record<keyof Omit<PlanRow, never>, string[]> = {
   url: ["url", "link", "page"],
   keyword: ["keyword", "primary keyword", "target keyword"],
@@ -27,18 +32,25 @@ const HEADER_ALIASES: Record<keyof Omit<PlanRow, never>, string[]> = {
   contentType: ["type", "content type"],
   batch: ["batch"],
   topicCluster: ["cluster", "topic cluster", "topic"],
+  publishDate: ["publish date", "published", "date", "publish"],
 };
 
 function pick(row: Record<string, string>, aliases: string[]): string | null {
-  const keys = Object.keys(row);
+  const entries = Object.keys(row).map((k) => [norm(k), k] as const);
   for (const alias of aliases) {
-    const match = keys.find((k) => k.trim().toLowerCase() === alias);
-    if (match) {
-      const v = (row[match] ?? "").trim();
+    const a = norm(alias);
+    const hit = entries.find(([nk]) => nk === a);
+    if (hit) {
+      const v = (row[hit[1]] ?? "").trim();
       return v === "" ? null : v;
     }
   }
   return null;
+}
+
+// Postgres `date` needs a full YYYY-MM-DD; partial values (e.g. "2026-01") → null.
+function cleanDate(v: string | null): string | null {
+  return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
 }
 
 function toPlanRows(records: Record<string, string>[]): {
@@ -46,9 +58,9 @@ function toPlanRows(records: Record<string, string>[]): {
   clusterColumnPresent: boolean;
 } {
   const headerSet = new Set(
-    records[0] ? Object.keys(records[0]).map((k) => k.trim().toLowerCase()) : [],
+    records[0] ? Object.keys(records[0]).map(norm) : [],
   );
-  const clusterColumnPresent = HEADER_ALIASES.topicCluster.some((a) => headerSet.has(a));
+  const clusterColumnPresent = HEADER_ALIASES.topicCluster.some((a) => headerSet.has(norm(a)));
 
   const rows: PlanRow[] = records
     .map((r) => ({
@@ -59,6 +71,7 @@ function toPlanRows(records: Record<string, string>[]): {
       batch: pick(r, HEADER_ALIASES.batch),
       // Even if the column exists, individual cells may be blank → null.
       topicCluster: clusterColumnPresent ? pick(r, HEADER_ALIASES.topicCluster) : null,
+      publishDate: cleanDate(pick(r, HEADER_ALIASES.publishDate)),
     }))
     .filter((r) => r.url !== "");
 

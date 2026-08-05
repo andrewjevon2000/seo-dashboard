@@ -5,9 +5,10 @@ export interface PlanRow {
   url: string; // raw, un-normalized (normalized downstream)
   keyword: string | null;
   status: string | null;
-  contentType: string | null; // from the sheet "Type" column
+  contentType: string | null; // from the sheet "Type"/"content_type" column
   batch: string | null;
-  topicCluster: string | null; // from the sheet "Cluster" column IF it exists yet
+  topicCluster: string | null; // from the sheet "Cluster"/"topic_cluster" column
+  publishDate: string | null; // YYYY-MM-DD, or null if absent/partial
 }
 
 /** GSC metrics for one page on one date. */
