@@ -11,10 +11,11 @@ next-env.d.ts
 # production
 /build
 
-# env
+# env — ignore every real env file; keep only the committed templates
 .env
-.env.local
-.env*.local
+.env.*
+!.env.example
+!.env.production.example
 
 # service account credentials — never commit
 /secrets/
