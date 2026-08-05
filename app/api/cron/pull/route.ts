@@ -10,7 +10,10 @@ import { runWeeklyPull } from "@/lib/pipeline/run";
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+// 60s keeps within the Vercel Hobby cap; the weekly pull (one gsc-pages call +
+// GA4 + inserts) fits comfortably. The credit-heavy backfill runs via the CLI,
+// not this route, so it isn't bound by the function timeout.
+export const maxDuration = 60;
 
 function authorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
