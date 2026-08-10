@@ -27,6 +27,8 @@
     "db:weekly-activity": "tsx lib/db/weekly-activity.ts",
     "db:decision": "tsx lib/db/decision.ts",
     "db:finding": "tsx lib/db/finding.ts",
+    "db:status": "tsx lib/db/status.ts",
+    "check": "tsc --noEmit && vitest run",
     "pipeline:run": "tsx lib/pipeline/cli.ts"
   },
   "dependencies": {
