@@ -24,26 +24,21 @@
  */
 import { readFileSync } from "node:fs";
 import { loadDevEnv } from "@/lib/dev-env";
+import {
+  RISK_CONFIDENCE,
+  plannedUrl,
+  isVerdict,
+  DECISION_VERDICTS,
+  type DecisionVerdict,
+} from "./store-helpers";
 
 loadDevEnv();
 
-const VERDICTS = ["create", "refresh", "merge", "redirect", "prune", "leave"] as const;
-type Verdict = (typeof VERDICTS)[number];
-
-const RISK_CONFIDENCE: Record<string, string> = {
-  SAFE: "0.85",
-  LOW: "0.55",
-  MODERATE: "0.7",
-  HIGH: "0.9",
-};
+type Verdict = DecisionVerdict;
 
 function arg(name: string): string | undefined {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
   return hit?.split("=").slice(1).join("=");
-}
-
-function slugify(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "unknown";
 }
 
 interface CanniPayload {
@@ -61,8 +56,8 @@ interface CanniPayload {
 function validate(r: unknown): CanniPayload {
   if (!r || typeof r !== "object") throw new Error("payload is not an object");
   const o = r as Record<string, unknown>;
-  if (!VERDICTS.includes(o.verdict as Verdict))
-    throw new Error(`verdict must be one of ${VERDICTS.join("|")}, got ${JSON.stringify(o.verdict)}`);
+  if (!isVerdict(o.verdict))
+    throw new Error(`verdict must be one of ${DECISION_VERDICTS.join("|")}, got ${JSON.stringify(o.verdict)}`);
   if (!o.url && !o.planned_keyword)
     throw new Error("either url (existing page) or planned_keyword (planned article) is required");
   return o as unknown as CanniPayload;
@@ -78,7 +73,7 @@ async function main() {
 
   const site = env.SITE_KEY;
   // Existing page → its URL; planned article → a queryable marker.
-  const url = p.url || `https://verihubs.com/__planned__/${slugify(p.planned_keyword!)}`;
+  const url = p.url || plannedUrl(p.planned_keyword!);
   const articleId = p.url ? await resolveArticleId(p.url, site) : null;
   const confidence = p.confidence != null ? String(p.confidence) : RISK_CONFIDENCE[p.risk ?? ""] ?? null;
   const today = new Date().toISOString().slice(0, 10);

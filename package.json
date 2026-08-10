@@ -24,6 +24,9 @@
     "db:canni-log": "tsx lib/db/cannibalization-log.ts",
     "db:findings-log": "tsx lib/db/findings-log.ts",
     "db:report-read": "tsx lib/db/report-reader.ts",
+    "db:weekly-activity": "tsx lib/db/weekly-activity.ts",
+    "db:decision": "tsx lib/db/decision.ts",
+    "db:finding": "tsx lib/db/finding.ts",
     "pipeline:run": "tsx lib/pipeline/cli.ts"
   },
   "dependencies": {

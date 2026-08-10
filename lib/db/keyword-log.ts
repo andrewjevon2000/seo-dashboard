@@ -20,6 +20,7 @@
  */
 import { readFileSync } from "node:fs";
 import { loadDevEnv } from "@/lib/dev-env";
+import { toFraction } from "./store-helpers";
 
 loadDevEnv();
 
@@ -39,12 +40,6 @@ interface KwPayload {
 function arg(name: string): string | undefined {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
   return hit?.split("=").slice(1).join("=");
-}
-
-/** GSC CTR is <1 as a fraction and <100 as a percent; treat >1 as percent. */
-function toFraction(ctr: number): number {
-  if (!Number.isFinite(ctr) || ctr < 0) return 0;
-  return ctr > 1 ? ctr / 100 : ctr;
 }
 
 function validate(r: unknown): KwPayload {

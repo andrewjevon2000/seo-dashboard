@@ -33,6 +33,7 @@
  */
 import { readFileSync } from "node:fs";
 import { loadDevEnv } from "@/lib/dev-env";
+import { siteFindingUrl } from "./store-helpers";
 
 loadDevEnv();
 
@@ -60,10 +61,6 @@ function arg(name: string): string | undefined {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
   return hit?.split("=").slice(1).join("=");
 }
-function slugify(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "x";
-}
-
 function validate(r: unknown): Payload {
   if (!r || typeof r !== "object") throw new Error("payload is not an object");
   const o = r as Record<string, unknown>;
@@ -95,9 +92,7 @@ async function main() {
     }
     // Per-page finding → normalized page URL. Aggregate → synthetic site marker
     // so the identity/dedup key still holds.
-    const url = f.url
-      ? normalizeUrl(f.url)
-      : `https://verihubs.com/__site__/${slugify(`${f.category}-${f.issue}`)}`;
+    const url = f.url ? normalizeUrl(f.url) : siteFindingUrl(f.category, f.issue);
 
     const [row] = await db
       .insert(findings)

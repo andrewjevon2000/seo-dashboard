@@ -1,8 +1,17 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "./client";
-import { articles, clients, decisions, changelog } from "./schema";
-import type { NewClient, NewDecision, NewChangelogEntry } from "./schema";
+import { articles, clients, decisions, changelog, findings } from "./schema";
+import type {
+  NewClient,
+  NewDecision,
+  NewChangelogEntry,
+  Decision,
+  Finding,
+} from "./schema";
 import { normalizeUrl } from "@/lib/pipeline/normalize";
+
+export type DecisionStatus = Decision["status"];
+export type FindingStatus = Finding["status"];
 
 /**
  * Write layer for the DECISION store (build plan Fase 0/2). Mirrors the invariants
@@ -130,4 +139,43 @@ export async function insertChangelogIfAbsent(
     .values({ ...c, url })
     .returning({ id: changelog.id });
   return { inserted: true, id: row.id };
+}
+
+/**
+ * ── Lifecycle transitions (build plan: the human gate) ───────────────────────
+ *
+ * These mutate the `status` column only — the field the schema explicitly designs
+ * to change (proposed → approved/rejected → executed → superseded; open →
+ * resolved/…). They never touch a verdict, rationale, or provenance, so the
+ * append-only history invariant holds. This is what makes the approval gate
+ * operable instead of decorative.
+ */
+
+export async function getDecision(id: string): Promise<Decision | null> {
+  const [row] = await db.select().from(decisions).where(eq(decisions.id, id)).limit(1);
+  return row ?? null;
+}
+
+/** Set a decision's status (+ approver / superseded-by). Returns rows affected. */
+export async function setDecisionStatus(
+  id: string,
+  status: DecisionStatus,
+  opts: { approvedBy?: string | null; supersededById?: string | null } = {},
+): Promise<number> {
+  const set: Partial<typeof decisions.$inferInsert> = { status };
+  if (opts.approvedBy !== undefined) set.approvedBy = opts.approvedBy;
+  if (opts.supersededById !== undefined) set.supersededById = opts.supersededById;
+  const res = await db.update(decisions).set(set).where(eq(decisions.id, id)).returning({ id: decisions.id });
+  return res.length;
+}
+
+export async function getFinding(id: string): Promise<Finding | null> {
+  const [row] = await db.select().from(findings).where(eq(findings.id, id)).limit(1);
+  return row ?? null;
+}
+
+/** Set a finding's status (open/triaged/resolved/wont_fix/escalated). */
+export async function setFindingStatus(id: string, status: FindingStatus): Promise<number> {
+  const res = await db.update(findings).set({ status }).where(eq(findings.id, id)).returning({ id: findings.id });
+  return res.length;
 }

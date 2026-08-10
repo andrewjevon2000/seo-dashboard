@@ -7,6 +7,7 @@ import {
   insertDecisionIfAbsent,
   insertChangelogIfAbsent,
 } from "./decisions-writes";
+import { parseCsvLine } from "./store-helpers";
 
 /**
  * Historical backfill (build plan Fase 1). Loads what we ALREADY KNOW into the
@@ -28,22 +29,6 @@ import {
  */
 
 const CSV_PATH = "SEO Article Verihubs - content-plan.csv";
-
-// ── CSV parsing (tolerant of quoted fields containing commas) ─────────────────
-function parseCsvLine(line: string): string[] {
-  const out: string[] = [];
-  let cur = "";
-  let q = false;
-  for (const ch of line) {
-    if (ch === '"') q = !q;
-    else if (ch === "," && !q) {
-      out.push(cur);
-      cur = "";
-    } else cur += ch;
-  }
-  out.push(cur);
-  return out;
-}
 
 interface CsvRow {
   url: string;

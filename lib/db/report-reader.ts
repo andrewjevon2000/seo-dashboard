@@ -14,21 +14,13 @@
  * Read-only. Prints a JSON block the skill merges into report-data.json.
  */
 import { loadDevEnv } from "@/lib/dev-env";
+import { monthRange } from "./store-helpers";
 
 loadDevEnv();
 
 function arg(name: string): string | undefined {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
   return hit?.split("=").slice(1).join("=");
-}
-
-/** [firstOfMonth, lastOfMonth] as YYYY-MM-DD for a "YYYY-MM" input. */
-function monthRange(month: string): { from: string; to: string } {
-  const [y, m] = month.split("-").map(Number);
-  if (!y || !m || m < 1 || m > 12) throw new Error("--month must be YYYY-MM");
-  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
-  const mm = String(m).padStart(2, "0");
-  return { from: `${y}-${mm}-01`, to: `${y}-${mm}-${String(last).padStart(2, "0")}` };
 }
 
 async function main() {

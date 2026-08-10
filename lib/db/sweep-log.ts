@@ -18,6 +18,7 @@
  */
 import { readFileSync } from "node:fs";
 import { loadDevEnv } from "@/lib/dev-env";
+import { draftUrl } from "./store-helpers";
 
 loadDevEnv();
 
@@ -40,10 +41,6 @@ function arg(name: string): string | undefined {
   return hit?.split("=").slice(1).join("=");
 }
 
-function slugify(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "unknown";
-}
-
 function validate(r: unknown): SweepResult {
   if (!r || typeof r !== "object") throw new Error("payload is not an object");
   const o = r as Record<string, unknown>;
@@ -63,7 +60,7 @@ async function main() {
   const { appendChangelog, resolveArticleId } = await import("./decisions-writes");
 
   // Real target URL when known; otherwise a clean, queryable draft marker.
-  const url = payload.url || `https://verihubs.com/__draft__/${slugify(payload.file)}`;
+  const url = payload.url || draftUrl(payload.file);
   const site = env.SITE_KEY;
   const articleId = payload.url ? await resolveArticleId(payload.url, site) : null;
 
