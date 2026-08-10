@@ -17,6 +17,13 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
+    "db:backfill": "tsx lib/db/backfill-cli.ts",
+    "db:regen-findings": "tsx lib/db/regen-findings-cli.ts",
+    "db:sweep-log": "tsx lib/db/sweep-log.ts",
+    "db:keyword-log": "tsx lib/db/keyword-log.ts",
+    "db:canni-log": "tsx lib/db/cannibalization-log.ts",
+    "db:findings-log": "tsx lib/db/findings-log.ts",
+    "db:report-read": "tsx lib/db/report-reader.ts",
     "pipeline:run": "tsx lib/pipeline/cli.ts"
   },
   "dependencies": {

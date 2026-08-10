@@ -8,6 +8,27 @@
       "when": 1785866647206,
       "tag": "0000_deep_plazm",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786291792780,
+      "tag": "0001_thick_quicksilver",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786323409452,
+      "tag": "0002_red_dakota_north",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786325060921,
+      "tag": "0003_worthless_kat_farrell",
+      "breakpoints": true
     }
   ]
 }
