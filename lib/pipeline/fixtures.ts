@@ -1,4 +1,4 @@
-import type { GscPageMetrics, Ga4PageMetrics } from "./types";
+import type { GscPageMetrics, Ga4PageMetrics, WebAnalyticsPageMetrics } from "./types";
 import { pathOf } from "./normalize";
 
 /**
@@ -187,4 +187,23 @@ export function fixtureGa4History(dateFrom: string, dateTo: string): Ga4PageMetr
     });
   }
   return out;
+}
+
+// ── Web Analytics fixtures (path 3) ───────────────────────────────────────────
+// Measured entry-page traffic ≈ organic clicks (both are organic landings).
+function waForWeek(a: FixtureArticle, i: number): WebAnalyticsPageMetrics {
+  const visitors = Math.round(a.clicks[i] * 0.9);
+  return {
+    url: a.url,
+    date: WEEK_DATES[i],
+    visitors,
+    entries: Math.round(visitors * 1.03),
+    avgSessionDurationSec: 200 + (i % 3) * 30,
+  };
+}
+
+export function fixtureWebAnalyticsPages(snapshotDate: string): WebAnalyticsPageMetrics[] {
+  const idx = WEEK_DATES.indexOf(snapshotDate);
+  const i = idx >= 0 ? idx : WEEK_DATES.length - 1;
+  return ARTICLES.map((a) => ({ ...waForWeek(a, i), date: snapshotDate }));
 }

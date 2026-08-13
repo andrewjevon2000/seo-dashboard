@@ -31,6 +31,15 @@ export interface Ga4PageMetrics {
   ctaClicks: number | null; // null when the CTA event isn't configured/tracked
 }
 
+/** Ahrefs Web Analytics measured metrics for one entry page over a period. */
+export interface WebAnalyticsPageMetrics {
+  url: string; // entry_page — full URL as Ahrefs reports it (normalized downstream)
+  date: string; // ISO yyyy-mm-dd (snapshot date, aligned to the GSC snapshot)
+  visitors: number;
+  entries: number;
+  avgSessionDurationSec: number;
+}
+
 export interface PipelineRunResult {
   ranAt: string;
   articlesUpserted: number;
@@ -38,6 +47,8 @@ export interface PipelineRunResult {
   snapshotsSkipped: number; // already existed (append-only, no overwrite)
   ga4SnapshotsInserted: number;
   ga4SnapshotsSkipped: number;
+  waSnapshotsInserted: number;
+  waSnapshotsSkipped: number;
   clusterColumnPresent: boolean;
   ahrefsCreditRemaining: number | null;
   skipped: boolean;

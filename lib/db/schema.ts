@@ -28,7 +28,7 @@ import {
  *    even though v1 is single-site. No UI switches on it in v1.
  */
 
-export const metricSource = pgEnum("metric_source", ["gsc", "ga4"]);
+export const metricSource = pgEnum("metric_source", ["gsc", "ga4", "web_analytics"]);
 
 export const articles = pgTable(
   "articles",

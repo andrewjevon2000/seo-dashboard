@@ -29,6 +29,13 @@
       "when": 1786325060921,
       "tag": "0003_worthless_kat_farrell",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786663419420,
+      "tag": "0004_oval_hitman",
+      "breakpoints": true
     }
   ]
 }

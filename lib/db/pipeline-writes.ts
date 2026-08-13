@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "./client";
 import { articles, performanceSnapshots } from "./schema";
-import type { PlanRow, GscPageMetrics, Ga4PageMetrics } from "@/lib/pipeline/types";
+import type { PlanRow, GscPageMetrics, Ga4PageMetrics, WebAnalyticsPageMetrics } from "@/lib/pipeline/types";
 import { normalizeUrl, normalizePath, pathOf } from "@/lib/pipeline/normalize";
 import { env } from "@/lib/env";
 
@@ -159,9 +159,50 @@ export async function insertGa4Snapshots(
   return { inserted, skipped, unmatched };
 }
 
+const WA_METRIC_FIELDS = [
+  ["visitors", "visitors"],
+  ["entries", "entries"],
+  ["avg_session_duration", "avgSessionDurationSec"],
+] as const;
+
+/**
+ * Append Ahrefs Web Analytics MEASURED metrics as long-form snapshot rows
+ * (source='web_analytics'), append-only. Joins by URL exactly like GSC (entry_page
+ * is a full URL). Kept as a distinct source so measured traffic is never conflated
+ * with the GSC estimate (brief §3.4).
+ */
+export async function insertWebAnalyticsSnapshots(
+  metrics: WebAnalyticsPageMetrics[],
+  urlToId: Map<string, string>,
+): Promise<{ inserted: number; skipped: number; unmatched: number }> {
+  const rows: {
+    articleId: string;
+    date: string;
+    source: "web_analytics";
+    metricName: string;
+    metricValue: string;
+  }[] = [];
+  let unmatched = 0;
+
+  for (const m of metrics) {
+    const id = urlToId.get(normalizeUrl(m.url));
+    if (!id) {
+      // Entry page not in the content plan (e.g. /product/*, homepage) — expected.
+      unmatched++;
+      continue;
+    }
+    for (const [metricName, field] of WA_METRIC_FIELDS) {
+      rows.push({ articleId: id, date: m.date, source: "web_analytics", metricName, metricValue: String(m[field]) });
+    }
+  }
+
+  if (rows.length === 0) return { inserted: 0, skipped: 0, unmatched };
+  return appendSnapshotRows(rows, unmatched);
+}
+
 /** Shared append helper — chunked insert with append-only ON CONFLICT DO NOTHING. */
 async function appendSnapshotRows(
-  rows: { articleId: string; date: string; source: "gsc" | "ga4"; metricName: string; metricValue: string }[],
+  rows: { articleId: string; date: string; source: "gsc" | "ga4" | "web_analytics"; metricName: string; metricValue: string }[],
   unmatched: number,
 ): Promise<{ inserted: number; skipped: number; unmatched: number }> {
   let inserted = 0;

@@ -46,6 +46,14 @@ const schema = z.object({
   // coherently from GSC clicks. "false" pulls all-traffic sessions instead.
   GA4_ORGANIC_ONLY: z.string().optional(),
 
+  // --- Ahrefs Web Analytics (measured on-site traffic; no GA4 admin needed) ---
+  // Uses the same AHREFS_API_KEY + AHREFS_PROJECT_ID as the GSC pull. On by
+  // default when Ahrefs is configured; set "false" to skip the web-analytics step.
+  WEB_ANALYTICS_ENABLED: z.string().optional(),
+  // Restrict measured entry-page traffic to the organic-search channel so it lines
+  // up with GSC clicks. "false" counts all channels.
+  WEB_ANALYTICS_ORGANIC_ONLY: z.string().optional(),
+
   CRON_SECRET: z.string().optional(),
   SITE_KEY: z.string().default("verihubs"),
 
@@ -79,6 +87,10 @@ export const env = {
   ga4ServiceAccountKey,
   // GA4 participates only when a property id + usable service account are present.
   ga4Configured: Boolean(d.GA4_PROPERTY_ID && ga4ServiceAccountEmail && ga4ServiceAccountKey),
+  // Web Analytics reuses the Ahrefs GSC credentials; on by default when present.
+  webAnalyticsOrganicOnly: bool(d.WEB_ANALYTICS_ORGANIC_ONLY, true),
+  webAnalyticsConfigured:
+    Boolean(d.AHREFS_API_KEY && d.AHREFS_PROJECT_ID != null && bool(d.WEB_ANALYTICS_ENABLED, true)),
 };
 
 export type Env = typeof env;

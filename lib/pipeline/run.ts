@@ -2,10 +2,12 @@ import { env } from "@/lib/env";
 import { readContentPlan } from "./sheet";
 import { pullGscPages, pullGscPageHistory, getCreditRemaining } from "./ahrefs";
 import { pullGa4Pages, pullGa4History } from "./ga4";
+import { pullWebAnalyticsPages } from "./web-analytics";
 import {
   upsertArticles,
   insertGscSnapshots,
   insertGa4Snapshots,
+  insertWebAnalyticsSnapshots,
   buildPathToId,
 } from "@/lib/db/pipeline-writes";
 import type { PipelineRunResult, Ga4PageMetrics } from "./types";
@@ -62,6 +64,8 @@ export async function runWeeklyPull(opts: RunOptions): Promise<PipelineRunResult
       snapshotsSkipped: 0,
       ga4SnapshotsInserted: 0,
       ga4SnapshotsSkipped: 0,
+      waSnapshotsInserted: 0,
+      waSnapshotsSkipped: 0,
       clusterColumnPresent,
       ahrefsCreditRemaining: creditRemaining,
       skipped: true,
@@ -84,6 +88,9 @@ export async function runWeeklyPull(opts: RunOptions): Promise<PipelineRunResult
   // 6. GA4 step (Phase 2) — additive, same append pattern, isolated from GSC.
   const ga4 = await runGa4Step(() => pullGa4Pages(from, to), urlToId, notes);
 
+  // 7. Web Analytics step (path 3) — measured on-site traffic, URL-joined like GSC.
+  const wa = await runWebAnalyticsStep(from, to, urlToId, notes);
+
   return {
     ranAt: opts.periodEnd,
     articlesUpserted: upserted,
@@ -91,11 +98,44 @@ export async function runWeeklyPull(opts: RunOptions): Promise<PipelineRunResult
     snapshotsSkipped: skipped,
     ga4SnapshotsInserted: ga4.inserted,
     ga4SnapshotsSkipped: ga4.skipped,
+    waSnapshotsInserted: wa.inserted,
+    waSnapshotsSkipped: wa.skipped,
     clusterColumnPresent,
     ahrefsCreditRemaining: creditRemaining,
     skipped: false,
     notes,
   };
+}
+
+/**
+ * Web Analytics pull+append step. Runs when configured (or fixtures on). Measured
+ * data is FREE (0 units) and needs no GA4/client access, but it sits after the
+ * credit guard for code simplicity, so a credit-guard skip also skips it.
+ * Never throws — a measured-traffic hiccup must not break the core GSC job.
+ */
+async function runWebAnalyticsStep(
+  from: string,
+  to: string,
+  urlToId: Map<string, string>,
+  notes: string[],
+): Promise<{ inserted: number; skipped: number }> {
+  if (!env.useFixtures && !env.webAnalyticsConfigured) {
+    notes.push("Web Analytics not configured — skipped.");
+    return { inserted: 0, skipped: 0 };
+  }
+  try {
+    const metrics = await pullWebAnalyticsPages(from, to);
+    const { inserted, skipped, unmatched } = await insertWebAnalyticsSnapshots(metrics, urlToId);
+    notes.push(
+      `Web Analytics: pulled ${metrics.length} entry pages, inserted ${inserted}, skipped ${skipped}${
+        unmatched ? `, ${unmatched} unmatched` : ""
+      }${env.webAnalyticsOrganicOnly ? " (organic-only)" : ""}.`,
+    );
+    return { inserted, skipped };
+  } catch (err) {
+    notes.push(`Web Analytics step failed (non-fatal): ${err instanceof Error ? err.message : String(err)}`);
+    return { inserted: 0, skipped: 0 };
+  }
 }
 
 /**
@@ -165,6 +205,9 @@ export async function runBackfill(opts: BackfillOptions): Promise<PipelineRunRes
     snapshotsSkipped: skipped,
     ga4SnapshotsInserted: ga4.inserted,
     ga4SnapshotsSkipped: ga4.skipped,
+    // Web Analytics accumulates via the weekly pull, not the historical backfill.
+    waSnapshotsInserted: 0,
+    waSnapshotsSkipped: 0,
     clusterColumnPresent,
     ahrefsCreditRemaining: await getCreditRemaining(),
     skipped: false,

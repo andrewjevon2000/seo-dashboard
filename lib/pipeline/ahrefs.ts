@@ -24,7 +24,7 @@ function requireProject(): number {
   return env.AHREFS_PROJECT_ID;
 }
 
-async function get<T>(path: string, params: Record<string, string | number | undefined>): Promise<T> {
+export async function get<T>(path: string, params: Record<string, string | number | undefined>): Promise<T> {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== "") qs.set(k, String(v));

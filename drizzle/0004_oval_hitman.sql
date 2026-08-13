@@ -1,0 +1,1 @@
+ALTER TYPE "public"."metric_source" ADD VALUE 'web_analytics';
