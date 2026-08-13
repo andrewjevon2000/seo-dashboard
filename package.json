@@ -29,7 +29,8 @@
     "db:finding": "tsx lib/db/finding.ts",
     "db:status": "tsx lib/db/status.ts",
     "check": "tsc --noEmit && vitest run",
-    "pipeline:run": "tsx lib/pipeline/cli.ts"
+    "pipeline:run": "tsx lib/pipeline/cli.ts",
+    "ga4:check": "tsx lib/pipeline/ga4-check.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
